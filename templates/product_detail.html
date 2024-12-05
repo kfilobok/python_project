@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ product.name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Заголовок -->
+    <header class="bg-light shadow-sm py-3">
+        <div class="container">
+            <h1 class="text-center">{{ product.name }}</h1>
+        </div>
+    </header>
+
+    <!-- Основной контент -->
+    <main class="container my-5">
+        <div class="row">
+            <!-- Секция изображений -->
+            <div class="col-md-6">
+                <h3>Product Images</h3>
+                <div class="product-images">
+                    {% for photo in product.photos %}
+                        <img src="{{ photo }}" class="img-fluid mb-3" alt="Product Image {{ loop.index }}">
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Секция описания -->
+            <div class="col-md-6">
+                <h2>{{ product.name }}</h2>
+                <p class="text-muted">{{ product.description }}</p>
+                <p><strong>Price:</strong> {{ product.price }}</p>
+
+                <!-- Кнопки -->
+                <div class="d-flex align-items-center gap-3">
+                    <a href="{{ product.link }}" target="_blank" class="btn btn-outline-dark btn-lg">Buy from Store</a>
+                    <a href="/catalog" class="btn btn-outline-secondary btn-sm">Back to Catalog</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Подвал -->
+    <footer class="bg-dark text-light py-4">
+        <div class="container text-center">
+            &copy; 2024 Product Catalog
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
