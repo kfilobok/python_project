@@ -36,7 +36,8 @@
 **Сайт:**
 - Flask
 
-
+### Ссылка на видеоотчёт
+https://disk.yandex.ru/i/87hRYO_M4BfpAw
 
 ### Роли в команде
 
