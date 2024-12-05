@@ -1,0 +1,146 @@
+/* General Styles */
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f7f7f7;
+    color: #333;
+}
+
+header {
+    background-color: #fff;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+/* Buttons */
+.btn-outline-dark {
+    border: 2px solid #333;
+    color: #333;
+    font-weight: bold;
+    padding: 0.6rem 1.2rem;
+    border-radius: 30px;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-outline-dark:hover {
+    background-color: #333;
+    color: #fff;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-outline-secondary {
+    border: 2px solid #aaa;
+    color: #555;
+    font-weight: normal;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #555;
+    color: #fff;
+    border-color: #555;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Store Link Button */
+.store-link {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05rem;
+}
+
+/* Back to Catalog Button */
+.back-to-catalog {
+    font-size: 0.9rem;
+    letter-spacing: 0.03rem;
+}
+
+/* Large Buttons */
+.btn-lg {
+    font-size: 1.2rem;
+    padding: 0.75rem 2rem;
+}
+
+/* Small Buttons */
+.btn-sm {
+    font-size: 0.9rem;
+    padding: 0.4rem 1rem;
+}
+
+
+/* Product Cards */
+.product-card {
+    border: none;
+    border-radius: 10px;
+    overflow: hidden;
+    background-color: #fff;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.product-card img {
+    object-fit: cover;
+    height: 200px;
+}
+
+.product-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.product-link:hover {
+    text-decoration: none;
+}
+
+/* Footer */
+footer {
+    background-color: #222;
+    color: #fff;
+    text-align: center;
+    padding: 20px 0;
+}
+
+footer a {
+    color: #fff;
+    text-decoration: none;
+}
+
+footer a:hover {
+    text-decoration: underline;
+}
+
+/* Pagination Styles */
+.pagination .page-item .page-link {
+    color: #333;
+    border: 1px solid #ddd;
+    background-color: #f7f7f7;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 30px; /* Округлённые кнопки */
+    padding: 0.5rem 1rem;
+}
+
+.pagination .page-item .page-link:hover {
+    background-color: #333;
+    color: #fff;
+    border-color: #333;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #333;
+    color: #fff;
+    border-color: #333;
+}
+
+.pagination .page-item.disabled .page-link {
+    color: #bbb;
+    background-color: #f7f7f7;
+    border-color: #ddd;
+}
