@@ -8,11 +8,13 @@
     <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- Заголовок -->
-    <header class="bg-light shadow-sm py-3">
+    <!-- Навигация -->
+    <header class="bg-light py-3 shadow-sm">
         <div class="container d-flex justify-content-between align-items-center">
-            <h1 class="text-uppercase fw-bold text-dark mb-0">Product Catalog</h1>
-            <a href="/" class="btn btn-outline-dark btn-sm">Back to Home</a>
+            <h1>Каталог товаров</h1>
+            <div>
+                <a href="/favorites" class="btn btn-outline-primary btn-sm">Избранное</a>
+            </div>
         </div>
     </header>
 
@@ -32,12 +34,17 @@
                     <div class="card product-card shadow-sm">
                         <a href="/product/{{ product.id }}" class="product-link">
                             <img src="{{ product.photo or '/static/default-image.jpg' }}" class="card-img-top" alt="{{ product.name }}">
-
                         </a>
                         <div class="card-body">
                             <h5 class="card-title text-truncate">{{ product.name }}</h5>
                             <p class="card-text text-muted text-truncate">{{ product.description }}</p>
                             <a href="/product/{{ product.id }}" class="btn btn-outline-dark btn-sm">View Details</a>
+                            <button
+    class="favorite-button"
+    data-product-id="{{ product.id }}">
+    {{ 'Удалить из избранного' if product.is_favorite else 'Добавить в избранное' }}
+</button>
+
                         </div>
                     </div>
                 </div>
@@ -75,7 +82,6 @@
         </nav>
     </main>
 
-
     <footer class="bg-dark text-light py-4">
         <div class="container text-center">
             &copy; Мы не являемся магазином
@@ -83,5 +89,24 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.favorite-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const productId = button.getAttribute('data-product-id');
+                const action = button.textContent.includes('Добавить') ? 'POST' : 'DELETE'; // Определяем действие
+
+                fetch(`/favorite/${productId}`, { method: action })
+                    .then(response => response.json())
+                    .then(data => {
+                        button.textContent = data.message === 'Добавлено в избранное'
+                            ? 'Удалить из избранного'
+                            : 'Добавить в избранное'; // Обновляем текст
+                    })
+                    .catch(error => {
+                        console.error('Ошибка добавления/удаления в избранное:', error);
+                    });
+            });
+        });
+    </script>
 </body>
 </html>

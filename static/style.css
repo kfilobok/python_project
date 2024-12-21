@@ -144,3 +144,48 @@ footer a:hover {
     background-color: #f7f7f7;
     border-color: #ddd;
 }
+
+
+
+.favorite-button {
+    background-color: #d6d6d6; /* Серый фон */
+    color: #000; /* Текст черного цвета */
+    border: none; /* Убираем рамку */
+    border-radius: 25px; /* Скругленные углы */
+    padding: 8px 20px; /* Пространство внутри кнопки */
+    font-size: 14px; /* Размер текста */
+    cursor: pointer; /* Указатель при наведении */
+    transition: all 0.3s ease; /* Плавность при изменении стиля */
+}
+
+.favorite-button:hover {
+    background-color: #c0c0c0; /* Более темный серый при наведении */
+}
+
+.favorite-button:disabled {
+    background-color: #f0f0f0; /* Светлый цвет, если кнопка отключена */
+    cursor: not-allowed; /* Запрещённый курсор */
+}
+
+
+/* Стили для кнопок "Избранное" */
+.favorite-button {
+    background-color: #d6d6d6; /* Светло-серый цвет фона */
+    color: #000; /* Черный цвет текста */
+    border: none; /* Убираем рамки */
+    border-radius: 25px; /* Скругленные углы */
+    padding: 8px 20px; /* Отступы для удобства */
+    font-size: 14px; /* Размер текста */
+    cursor: pointer; /* Указатель при наведении */
+    transition: all 0.3s ease; /* Анимация для плавности */
+}
+
+.favorite-button:hover {
+    background-color: #c0c0c0; /* Темнее при наведении */
+}
+
+.favorite-button:disabled {
+    background-color: #f0f0f0; /* Светлее, если отключена */
+    cursor: not-allowed; /* Запрет на клик */
+}
+
