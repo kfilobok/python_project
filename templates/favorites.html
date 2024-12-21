@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Избранное</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <header class="bg-light py-3 shadow-sm">
+        <div class="container d-flex justify-content-between align-items-center">
+            <h1>Избранное</h1>
+            <a href="/" class="btn btn-outline-dark btn-sm">На главную</a>
+        </div>
+    </header>
+
+    <main class="container my-5">
+        {% if favorites %}
+            <div class="row">
+                {% for product in favorites %}
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                        <div class="card product-card shadow-sm">
+                            <a href="/product/{{ product.id }}">
+                                <img src="{{ product.photo or '/static/default-image.jpg' }}" class="card-img-top" alt="{{ product.name }}">
+                            </a>
+                            <div class="card-body">
+                                <h5 class="card-title text-truncate">{{ product.name }}</h5>
+                                <p class="card-text text-muted text-truncate">{{ product.description }}</p>
+                                <a href="/product/{{ product.id }}" class="btn btn-outline-dark btn-sm">Подробнее</a>
+                                <button
+    class="favorite-button remove-favorite-button"
+    data-product-id="{{ product.id }}">
+    Удалить из избранного
+</button>
+
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="text-center text-muted">Нет товаров в избранном.</p>
+        {% endif %}
+    </main>
+
+    <footer class="bg-dark text-light py-4">
+        <div class="container text-center">
+            &copy; Мы не являемся магазином
+        </div>
+    </footer>
+
+    <script>
+        document.querySelectorAll('.remove-favorite-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const productId = button.getAttribute('data-product-id');
+                fetch(`/favorite/${productId}`, { method: 'DELETE' })
+                    .then(response => response.json())
+                    .then(data => {
+                        alert(data.message);
+                        location.reload();
+                    });
+            });
+        });
+    </script>
+</body>
+</html>

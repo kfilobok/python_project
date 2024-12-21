@@ -38,9 +38,23 @@
                     <a href="{{ product.link }}" target="_blank" class="btn btn-outline-dark btn-lg">Buy from Store</a>
                     <a href="/catalog" class="btn btn-outline-secondary btn-sm">Back to Catalog</a>
                 </div>
+
+                <!-- Кнопка "Избранное" -->
+                {% if current_user.is_authenticated %}
+                    <div class="d-flex align-items-center gap-3 mt-3">
+                        {% if current_user.is_authenticated %}
+    <button
+        class="favorite-button"
+        data-product-id="{{ product.id }}">
+        {{ 'Удалить из избранного' if product.is_favorite else 'Добавить в избранное' }}
+    </button>
+{% endif %}
+                    </div>
+                {% endif %}
             </div>
         </div>
     </main>
+
 
     <!-- Подвал -->
     <footer class="bg-dark text-light py-4">
@@ -50,5 +64,25 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.querySelectorAll('.favorite-button').forEach(button => {
+            button.addEventListener('click', () => {
+                const productId = button.getAttribute('data-product-id');
+                const action = button.textContent.includes('Добавить') ? 'POST' : 'DELETE'; // Определяем действие
+
+                fetch(`/favorite/${productId}`, { method: action })
+                    .then(response => response.json())
+                    .then(data => {
+                        button.textContent = data.message === 'Добавлено в избранное'
+                            ? 'Удалить из избранного'
+                            : 'Добавить в избранное'; // Обновляем текст
+                    })
+                    .catch(error => {
+                        console.error('Ошибка добавления/удаления в избранное:', error);
+                    });
+            });
+        });
+    </script>
 </body>
 </html>
