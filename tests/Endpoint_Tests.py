@@ -1,5 +1,3 @@
-#Проверяют, доступен ли определённый маршрут и возвращает ли он правильный статус и содержимое
-
 import unittest
 from app import app
 
@@ -12,12 +10,14 @@ class TestRoutes(unittest.TestCase):
     def test_home_page(self):
         response = self.app.get('/')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'main page', response.data)
+        # Проверяем, есть ли фраза "Главная страница" на главной странице
+        self.assertIn('Главная страница', response.data.decode('utf-8'))
 
     def test_catalog_page(self):
         response = self.app.get('/catalog')
         self.assertEqual(response.status_code, 200)
-        self.assertIn(b'Product Catalog', response.data)
+        # Проверяем, есть ли фраза "Каталог товаров" на странице каталога
+        self.assertIn('Каталог товаров', response.data.decode('utf-8'))
 
 if __name__ == '__main__':
     unittest.main()

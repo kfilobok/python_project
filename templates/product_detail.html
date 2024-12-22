@@ -19,7 +19,7 @@
         <div class="row">
             <!-- Секция изображений -->
             <div class="col-md-6">
-                <h3>Product Images</h3>
+                <h3>Изображения продукта</h3>
                 <div class="product-images">
                     {% for photo in product.photos %}
                         <img src="{{ photo }}" class="img-fluid mb-3" alt="Product Image {{ loop.index }}">
@@ -31,30 +31,33 @@
             <div class="col-md-6">
                 <h2>{{ product.name }}</h2>
                 <p class="text-muted">{{ product.description }}</p>
-                <p><strong>Price:</strong> {{ product.price }}</p>
+                <p><strong>Цена:</strong> {{ product.price }}</p>
+                <p><strong>Цвет:</strong> {{ product.color }}</p>
 
                 <!-- Кнопки -->
                 <div class="d-flex align-items-center gap-3">
-                    <a href="{{ product.link }}" target="_blank" class="btn btn-outline-dark btn-lg">Buy from Store</a>
-                    <a href="/catalog" class="btn btn-outline-secondary btn-sm">Back to Catalog</a>
+                    <a href="{{ product.link }}" target="_blank" class="btn btn-outline-dark btn-lg">Смотреть в магазине</a>
+                    <a href="{{ url_for('catalog', page=page, query=query) }}" class="btn btn-secondary">Назад в каталог</a>
+
                 </div>
 
                 <!-- Кнопка "Избранное" -->
                 {% if current_user.is_authenticated %}
                     <div class="d-flex align-items-center gap-3 mt-3">
-                        {% if current_user.is_authenticated %}
-    <button
-        class="favorite-button"
-        data-product-id="{{ product.id }}">
-        {{ 'Удалить из избранного' if product.is_favorite else 'Добавить в избранное' }}
-    </button>
-{% endif %}
+                        <button
+    class="btn favorite-btn {{ 'added' if product.is_favorite else '' }}"
+    data-product-id="{{ product.id }}"
+    data-table-name="{{ table_name }}">
+    {{ 'Добавлено в избранное' if product.is_favorite else 'В избранное' }}
+</button>
+
+
+
                     </div>
                 {% endif %}
             </div>
         </div>
     </main>
-
 
     <!-- Подвал -->
     <footer class="bg-dark text-light py-4">
@@ -64,25 +67,41 @@
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.querySelectorAll('.favorite-button').forEach(button => {
-            button.addEventListener('click', () => {
-                const productId = button.getAttribute('data-product-id');
-                const action = button.textContent.includes('Добавить') ? 'POST' : 'DELETE'; // Определяем действие
 
-                fetch(`/favorite/${productId}`, { method: action })
-                    .then(response => response.json())
-                    .then(data => {
-                        button.textContent = data.message === 'Добавлено в избранное'
-                            ? 'Удалить из избранного'
-                            : 'Добавить в избранное'; // Обновляем текст
-                    })
-                    .catch(error => {
-                        console.error('Ошибка добавления/удаления в избранное:', error);
-                    });
-            });
+    <script>
+            document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.favorite-btn').forEach(function (button) {
+        button.addEventListener('click', function () {
+            const productId = this.getAttribute('data-product-id');
+            const tableName = this.getAttribute('data-table-name');
+            const isAdded = this.classList.contains('added');
+
+            const url = `/favorite/${tableName}/${productId}`;
+            const method = isAdded ? 'DELETE' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+            })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`Ошибка HTTP: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.message) {
+                        this.classList.toggle('added');
+                        this.textContent = isAdded ? 'В избранное' : 'Добавлено в избранное';
+                    }
+                })
+                .catch(error => console.error('Ошибка:', error));
         });
+    });
+});
+
+
+
     </script>
 </body>
 </html>
