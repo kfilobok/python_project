@@ -1,0 +1,579 @@
+Index: check_user.py
+===================================================================
+diff --git a/check_user.py b/check_user.py
+--- a/check_user.py	
++++ b/check_user.py	
+@@ -1,0 +1,13 @@
++import sqlite3
++
++DATABASE = 'products.db'
++
++def check_user(email):
++    with sqlite3.connect(DATABASE) as conn:
++        cursor = conn.cursor()
++        cursor.execute('SELECT * FROM users WHERE email = ?', (email,))
++        user = cursor.fetchone()
++        if user:
++            print(f"User with email {email} exists: {user}")
++        else:
++            print(f"No user found with email {email}")
+Index: templates/login.html
+===================================================================
+diff --git a/templates/login.html b/templates/login.html
+--- a/templates/login.html	
++++ b/templates/login.html	
+@@ -1,0 +1,25 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Вход</title>
++    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
++</head>
++<body>
++    <div class="container my-5">
++        <h1 class="mb-4">Вход</h1>
++        <form method="POST" action="/login">
++            <div class="mb-3">
++                <label for="email" class="form-label">Email</label>
++                <input type="email" class="form-control" id="email" name="email" required>
++            </div>
++            <div class="mb-3">
++                <label for="password" class="form-label">Пароль</label>
++                <input type="password" class="form-control" id="password" name="password" required>
++            </div>
++            <button type="submit" class="btn btn-primary">Войти</button>
++        </form>
++    </div>
++</body>
++</html>
+Index: templates/home.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>main page</title>\n    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n    <link rel=\"stylesheet\" href=\"/static/style.css\">\n</head>\n<body>\n    <!-- Кнопка для каталога -->\n    <main class=\"container-fluid p-0\">\n        <div class=\"text-center my-5\">\n            <a href=\"/catalog\" class=\"btn btn-outline-dark btn-lg fw-bold\">View Full Catalog</a>\n        </div>\n\n        <!-- Рекомендованные продукты -->\n        {% for product in featured_products %}\n            <div class=\"product-fullscreen\">\n                <a href=\"/product/{{ product.id }}\">\n                    <img src=\"{{ product.photo or '/static/default-image.jpg' }}\" class=\"img-fluid w-100\" alt=\"{{ product.name }}\">\n\n                </a>\n            </div>\n        {% endfor %}\n    </main>\n\n    <footer class=\"bg-dark text-light py-4\">\n        <div class=\"container text-center\">\n            &copy; Мы не являемся магазином\n        </div>\n    </footer>\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js\"></script>\n</body>\n</html>
+===================================================================
+diff --git a/templates/home.html b/templates/home.html
+--- a/templates/home.html	
++++ b/templates/home.html	
+@@ -8,6 +8,23 @@
+     <link rel="stylesheet" href="/static/style.css">
+ </head>
+ <body>
++    <!-- Навигация -->
++    <header class="bg-light py-3 shadow-sm">
++        <div class="container d-flex justify-content-between align-items-center">
++            <h1>Главная страница</h1>
++            <div>
++                <a href="/favorites" class="btn btn-outline-primary btn-sm me-2">Избранное</a>
++                {% if current_user.is_authenticated %}
++                    <span class="me-2">Привет, {{ current_user.username }}!</span>
++                    <a href="/logout" class="btn btn-outline-danger btn-sm">Выйти</a>
++                {% else %}
++                    <a href="/login" class="btn btn-outline-primary btn-sm me-2">Войти</a>
++                    <a href="/register" class="btn btn-outline-success btn-sm">Регистрация</a>
++                {% endif %}
++            </div>
++        </div>
++    </header>
++
+     <!-- Кнопка для каталога -->
+     <main class="container-fluid p-0">
+         <div class="text-center my-5">
+@@ -19,7 +36,6 @@
+             <div class="product-fullscreen">
+                 <a href="/product/{{ product.id }}">
+                     <img src="{{ product.photo or '/static/default-image.jpg' }}" class="img-fluid w-100" alt="{{ product.name }}">
+-
+                 </a>
+             </div>
+         {% endfor %}
+@@ -32,4 +48,4 @@
+     </footer>
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+Index: templates/product_detail.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>{{ product.name }}</title>\n    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n</head>\n<body>\n    <!-- Заголовок -->\n    <header class=\"bg-light shadow-sm py-3\">\n        <div class=\"container\">\n            <h1 class=\"text-center\">{{ product.name }}</h1>\n        </div>\n    </header>\n\n    <!-- Основной контент -->\n    <main class=\"container my-5\">\n        <div class=\"row\">\n            <!-- Секция изображений -->\n            <div class=\"col-md-6\">\n                <h3>Product Images</h3>\n                <div class=\"product-images\">\n                    {% for photo in product.photos %}\n                        <img src=\"{{ photo }}\" class=\"img-fluid mb-3\" alt=\"Product Image {{ loop.index }}\">\n                    {% endfor %}\n                </div>\n            </div>\n\n            <!-- Секция описания -->\n            <div class=\"col-md-6\">\n                <h2>{{ product.name }}</h2>\n                <p class=\"text-muted\">{{ product.description }}</p>\n                <p><strong>Price:</strong> {{ product.price }}</p>\n\n                <!-- Кнопки -->\n                <div class=\"d-flex align-items-center gap-3\">\n                    <a href=\"{{ product.link }}\" target=\"_blank\" class=\"btn btn-outline-dark btn-lg\">Buy from Store</a>\n                    <a href=\"/catalog\" class=\"btn btn-outline-secondary btn-sm\">Back to Catalog</a>\n                </div>\n            </div>\n        </div>\n    </main>\n\n    <!-- Подвал -->\n    <footer class=\"bg-dark text-light py-4\">\n        <div class=\"container text-center\">\n            &copy; 2024 Product Catalog\n        </div>\n    </footer>\n\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js\"></script>\n</body>\n</html>\n
+===================================================================
+diff --git a/templates/product_detail.html b/templates/product_detail.html
+--- a/templates/product_detail.html	
++++ b/templates/product_detail.html	
+@@ -38,10 +38,22 @@
+                     <a href="{{ product.link }}" target="_blank" class="btn btn-outline-dark btn-lg">Buy from Store</a>
+                     <a href="/catalog" class="btn btn-outline-secondary btn-sm">Back to Catalog</a>
+                 </div>
++
++                <!-- Кнопка "Избранное" -->
++                {% if current_user.is_authenticated %}
++                    <div class="d-flex align-items-center gap-3 mt-3">
++                        <button
++                            class="btn btn-sm btn-outline-primary favorite-button"
++                            data-product-id="{{ product.id }}">
++                            {{ 'Удалить из избранного' if product.is_favorite else 'Добавить в избранное' }}
++                        </button>
++                    </div>
++                {% endif %}
+             </div>
+         </div>
+     </main>
+ 
++
+     <!-- Подвал -->
+     <footer class="bg-dark text-light py-4">
+         <div class="container text-center">
+@@ -50,5 +62,22 @@
+     </footer>
+ 
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
++    <script>
++    document.querySelectorAll('.favorite-button').forEach(button => {
++        button.addEventListener('click', () => {
++            const productId = button.getAttribute('data-product-id');
++
++            fetch(`/favorite/${productId}`, { method: 'POST' })
++                .then(response => response.json())
++                .then(data => {
++                    button.textContent = data.message;  // Обновляем текст кнопки
++                    button.disabled = true;  // Отключаем кнопку после добавления
++                })
++                .catch(error => {
++                    console.error('Ошибка добавления в избранное:', error);
++                });
++        });
++    });
++</script>
+ </body>
+ </html>
+Index: templates/catalog.html
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><!DOCTYPE html>\n<html lang=\"en\">\n<head>\n    <meta charset=\"UTF-8\">\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n    <title>Catalog</title>\n    <link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n    <link rel=\"stylesheet\" href=\"/static/style.css\">\n</head>\n<body>\n    <!-- Заголовок -->\n    <header class=\"bg-light shadow-sm py-3\">\n        <div class=\"container d-flex justify-content-between align-items-center\">\n            <h1 class=\"text-uppercase fw-bold text-dark mb-0\">Product Catalog</h1>\n            <a href=\"/\" class=\"btn btn-outline-dark btn-sm\">Back to Home</a>\n        </div>\n    </header>\n\n    <main class=\"container my-5\">\n        <!-- Строка поиска -->\n        <form method=\"POST\" action=\"/catalog\" class=\"mb-4\">\n            <div class=\"input-group\">\n                <input type=\"text\" class=\"form-control\" name=\"query\" placeholder=\"Search for products...\" value=\"{{ query or '' }}\">\n                <button class=\"btn btn-outline-dark\" type=\"submit\">Search</button>\n            </div>\n        </form>\n\n        <!-- Сетка продуктов -->\n        <div class=\"row\">\n            {% for product in products %}\n                <div class=\"col-lg-3 col-md-4 col-sm-6 mb-4\">\n                    <div class=\"card product-card shadow-sm\">\n                        <a href=\"/product/{{ product.id }}\" class=\"product-link\">\n                            <img src=\"{{ product.photo or '/static/default-image.jpg' }}\" class=\"card-img-top\" alt=\"{{ product.name }}\">\n\n                        </a>\n                        <div class=\"card-body\">\n                            <h5 class=\"card-title text-truncate\">{{ product.name }}</h5>\n                            <p class=\"card-text text-muted text-truncate\">{{ product.description }}</p>\n                            <a href=\"/product/{{ product.id }}\" class=\"btn btn-outline-dark btn-sm\">View Details</a>\n                        </div>\n                    </div>\n                </div>\n            {% endfor %}\n        </div>\n\n        {% if not products %}\n            <p class=\"text-center text-muted\">No products found matching your search.</p>\n        {% endif %}\n\n        <nav class=\"d-flex justify-content-center mt-4\">\n            <ul class=\"pagination\">\n                {% if page > 1 %}\n                    <li class=\"page-item\">\n                        <a class=\"page-link\" href=\"/catalog?page={{ page - 1 }}{% if query %}&query={{ query }}{% endif %}\" aria-label=\"Previous\">\n                            <span aria-hidden=\"true\">&laquo;</span>\n                        </a>\n                    </li>\n                {% endif %}\n\n                {% for p in range(1, total_pages + 1) %}\n                    <li class=\"page-item {% if p == page %}active{% endif %}\">\n                        <a class=\"page-link\" href=\"/catalog?page={{ p }}{% if query %}&query={{ query }}{% endif %}\">{{ p }}</a>\n                    </li>\n                {% endfor %}\n\n                {% if page < total_pages %}\n                    <li class=\"page-item\">\n                        <a class=\"page-link\" href=\"/catalog?page={{ page + 1 }}{% if query %}&query={{ query }}{% endif %}\" aria-label=\"Next\">\n                            <span aria-hidden=\"true\">&raquo;</span>\n                        </a>\n                    </li>\n                {% endif %}\n            </ul>\n        </nav>\n    </main>\n\n\n    <footer class=\"bg-dark text-light py-4\">\n        <div class=\"container text-center\">\n            &copy; Мы не являемся магазином\n        </div>\n    </footer>\n\n    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js\"></script>\n</body>\n</html>
+===================================================================
+diff --git a/templates/catalog.html b/templates/catalog.html
+--- a/templates/catalog.html	
++++ b/templates/catalog.html	
+@@ -8,11 +8,14 @@
+     <link rel="stylesheet" href="/static/style.css">
+ </head>
+ <body>
+-    <!-- Заголовок -->
+-    <header class="bg-light shadow-sm py-3">
++    <!-- Навигация -->
++    <header class="bg-light py-3 shadow-sm">
+         <div class="container d-flex justify-content-between align-items-center">
+-            <h1 class="text-uppercase fw-bold text-dark mb-0">Product Catalog</h1>
+-            <a href="/" class="btn btn-outline-dark btn-sm">Back to Home</a>
++            <h1>Каталог товаров</h1>
++            <div>
++                <a href="/favorites" class="btn btn-outline-primary btn-sm">Избранное</a>
++
++            </div>
+         </div>
+     </header>
+ 
+@@ -75,7 +78,6 @@
+         </nav>
+     </main>
+ 
+-
+     <footer class="bg-dark text-light py-4">
+         <div class="container text-center">
+             &copy; Мы не являемся магазином
+@@ -83,5 +85,22 @@
+     </footer>
+ 
+     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
++    <script>
++    document.querySelectorAll('.favorite-button').forEach(button => {
++        button.addEventListener('click', () => {
++            const productId = button.getAttribute('data-product-id');
++
++            fetch(`/favorite/${productId}`, { method: 'POST' })
++                .then(response => response.json())
++                .then(data => {
++                    button.textContent = data.message;  // Обновляем текст кнопки
++                    button.disabled = true;  // Отключаем кнопку после добавления
++                })
++                .catch(error => {
++                    console.error('Ошибка добавления в избранное:', error);
++                });
++        });
++    });
++</script>
+ </body>
+-</html>
+\ No newline at end of file
++</html>
+Index: templates/favorites.html
+===================================================================
+diff --git a/templates/favorites.html b/templates/favorites.html
+--- a/templates/favorites.html	
++++ b/templates/favorites.html	
+@@ -1,0 +1,65 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Избранное</title>
++    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
++</head>
++<body>
++    <header class="bg-light py-3 shadow-sm">
++        <div class="container d-flex justify-content-between align-items-center">
++            <h1>Избранное</h1>
++            <a href="/" class="btn btn-outline-dark btn-sm">На главную</a>
++        </div>
++    </header>
++
++    <main class="container my-5">
++        {% if favorites %}
++            <div class="row">
++                {% for product in favorites %}
++                    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
++                        <div class="card product-card shadow-sm">
++                            <a href="/product/{{ product.id }}">
++                                <img src="{{ product.photo or '/static/default-image.jpg' }}" class="card-img-top" alt="{{ product.name }}">
++                            </a>
++                            <div class="card-body">
++                                <h5 class="card-title text-truncate">{{ product.name }}</h5>
++                                <p class="card-text text-muted text-truncate">{{ product.description }}</p>
++                                <a href="/product/{{ product.id }}" class="btn btn-outline-dark btn-sm">Подробнее</a>
++                                <button
++                                    class="btn btn-sm btn-outline-danger remove-favorite-button"
++                                    data-product-id="{{ product.id }}">
++                                    Удалить из избранного
++                                </button>
++                            </div>
++                        </div>
++                    </div>
++                {% endfor %}
++            </div>
++        {% else %}
++            <p class="text-center text-muted">Нет товаров в избранном.</p>
++        {% endif %}
++    </main>
++
++    <footer class="bg-dark text-light py-4">
++        <div class="container text-center">
++            &copy; Мы не являемся магазином
++        </div>
++    </footer>
++
++    <script>
++        document.querySelectorAll('.remove-favorite-button').forEach(button => {
++            button.addEventListener('click', () => {
++                const productId = button.getAttribute('data-product-id');
++                fetch(`/favorite/${productId}`, { method: 'DELETE' })
++                    .then(response => response.text())
++                    .then(message => {
++                        alert(message);
++                        location.reload();
++                    });
++            });
++        });
++    </script>
++</body>
++</html>
+Index: app.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>from flask import Flask, render_template, g, request\nimport sqlite3\n\n# Константы\nDATABASE = 'products.db'\nPER_PAGE = 16  # Количество товаров на странице\n\n# Инициализация\napp = Flask(__name__)\n\n# Подключение к базе данных\ndef get_db():\n    db = getattr(g, '_database', None)\n    if db is None:\n        db = g._database = sqlite3.connect(DATABASE)\n        db.row_factory = sqlite3.Row\n    return db\n\n@app.teardown_appcontext\ndef close_connection(exception=None):\n    db = getattr(g, '_database', None)\n    if db is not None:\n        db.close()\n\n# Главная страница\n@app.route('/')\ndef home():\n    db = get_db()\n    cursor = db.execute('SELECT * FROM products ORDER BY RANDOM() LIMIT 5')  # Выбираем 5 случайных товаров\n    products = cursor.fetchall()\n\n    featured_products = []\n    for product in products:\n        product_dict = dict(product)\n        # Разделяем все ссылки\n        photos = [photo.strip() for photo in product_dict['photo'].split(',')]\n        # Берем первую ссылку высокого качества\n        high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)\n        product_dict['photo'] = high_quality_photo\n        featured_products.append(product_dict)\n    return render_template('home.html', featured_products=featured_products)\n\n# Страница каталога\ndef is_high_quality(url):\n    import re\n    return bool(re.search(r'q=85', url) and re.search(r'w=1000', url))\n\n\n@app.route('/catalog', methods=['GET', 'POST'])\ndef catalog():\n    db = get_db()\n    page = request.args.get('page', 1, type=int)\n    query = request.form.get('query')\n\n    if query:\n        cursor = db.execute(\n            '''\n            SELECT * FROM products\n            WHERE name LIKE ?\n            LIMIT ? OFFSET ?\n            ''',\n            (f'%{query.strip()}%', PER_PAGE, (page - 1) * PER_PAGE)\n        )\n    else:\n        cursor = db.execute(\n            'SELECT * FROM products LIMIT ? OFFSET ?',\n            (PER_PAGE, (page - 1) * PER_PAGE)\n        )\n\n    products = cursor.fetchall()\n\n    # Обработка товаров\n    processed_products = []\n    for product in products:\n        product_dict = dict(product)\n        if product_dict['photo']:\n            # Разделяем все ссылки\n            photos = [photo.strip() for photo in product_dict['photo'].split(',')]\n            # Берем первую ссылку высокого качества\n            high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)\n            product_dict['photo'] = high_quality_photo\n        processed_products.append(product_dict)\n\n    total_products = db.execute(\n        '''\n        SELECT COUNT(*) FROM products\n        WHERE name LIKE ?\n        ''' if query else 'SELECT COUNT(*) FROM products',\n        (f'%{query.strip()}%',) if query else ()\n    ).fetchone()[0]\n    total_pages = (total_products + PER_PAGE - 1) // PER_PAGE\n\n    return render_template(\n        'catalog.html',\n        products=processed_products,\n        query=query,\n        page=page,\n        total_pages=total_pages\n    )\n\n\n# Страница товара\ndef is_high_quality(url):\n    import re\n    return bool(re.search(r'q=85', url) and re.search(r'w=1000', url))\n\n\n@app.route('/product/<int:product_id>')\ndef product_detail(product_id):\n    db = get_db()\n    cursor = db.execute('SELECT * FROM products WHERE id = ?', (product_id,))\n    product = cursor.fetchone()\n\n    if product:\n        product_dict = dict(product)\n        if product_dict['photo']:\n            # Разделяем все ссылки\n            photos = [photo.strip() for photo in product_dict['photo'].split(',')]\n            high_quality_photos = [photo for photo in photos if is_high_quality(photo)]\n            product_dict['photos'] = high_quality_photos\n        return render_template('product_detail.html', product=product_dict)\n    else:\n        return \"Product not found\", 404\n\n\n# Запуск\nif __name__ == '__main__':\n    app.run(debug=True)\n
+===================================================================
+diff --git a/app.py b/app.py
+--- a/app.py	
++++ b/app.py	
+@@ -1,32 +1,74 @@
+-from flask import Flask, render_template, g, request
++from flask import Flask, render_template, g, request, redirect, url_for, flash
+ import sqlite3
++from flask_login import UserMixin, LoginManager, login_user, logout_user, current_user, login_required
++import bcrypt  # Для хэширования паролей
+ 
+ # Константы
+ DATABASE = 'products.db'
+-PER_PAGE = 16  # Количество товаров на странице
++PER_PAGE = 16
+ 
+-# Инициализация
++# Инициализация приложения
+ app = Flask(__name__)
++app.secret_key = 'your_secret_key'
++
++# Настройка Flask-Login
++login_manager = LoginManager()
++login_manager.init_app(app)
++login_manager.login_view = 'login'
++
+ 
+ # Подключение к базе данных
+ def get_db():
++    """Подключение к базе данных products.db."""
+     db = getattr(g, '_database', None)
+     if db is None:
+         db = g._database = sqlite3.connect(DATABASE)
+         db.row_factory = sqlite3.Row
+     return db
+ 
++
+ @app.teardown_appcontext
+ def close_connection(exception=None):
+     db = getattr(g, '_database', None)
+     if db is not None:
+         db.close()
+ 
++
++# Flask-Login: Загрузка пользователя
++@login_manager.user_loader
++def load_user(user_id):
++    db = get_db()
++    cursor = db.execute('SELECT * FROM users WHERE id = ?', (user_id,))
++    user = cursor.fetchone()
++    if user:
++        return User(user['id'], user['username'], user['email'], user['password_hash'])
++    return None
++
++
++# Модель пользователя
++class User(UserMixin):
++    def __init__(self, id, username, email, password_hash):
++        self.id = id
++        self.username = username
++        self.email = email
++        self.password_hash = password_hash
++
++
++# Функция для генерации хэша пароля
++def generate_password_hash(password):
++    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
++
++
++# Функция для проверки пароля
++def check_password_hash(stored_password, provided_password):
++    return bcrypt.checkpw(provided_password.encode('utf-8'), stored_password.encode('utf-8'))
++
++
+ # Главная страница
+ @app.route('/')
+ def home():
+     db = get_db()
+-    cursor = db.execute('SELECT * FROM products ORDER BY RANDOM() LIMIT 5')  # Выбираем 5 случайных товаров
++    cursor = db.execute('SELECT * FROM products ORDER BY RANDOM() LIMIT 5')
+     products = cursor.fetchall()
+ 
+     featured_products = []
+@@ -40,7 +82,123 @@
+         featured_products.append(product_dict)
+     return render_template('home.html', featured_products=featured_products)
+ 
+-# Страница каталога
++
++# Регистрация
++@app.route('/register', methods=['GET', 'POST'])
++def register():
++    if request.method == 'POST':
++        username = request.form['username']
++        email = request.form['email']
++        password = request.form['password']
++
++        # Генерация хэша пароля
++        password_hash = generate_password_hash(password)
++
++        # Сохранение пользователя в базе данных
++        db = get_db()
++        db.execute(
++            'INSERT INTO users (username, email, password_hash) VALUES (?, ?, ?)',
++            (username, email, password_hash)
++        )
++        db.commit()
++
++        flash('Вы успешно зарегистрировались.')
++        return redirect(url_for('login'))
++    return render_template('register.html')
++
++
++# Вход
++@app.route('/login', methods=['GET', 'POST'])
++def login():
++    if request.method == 'POST':
++        email = request.form['email']
++        password = request.form['password']
++
++        # Поиск пользователя в базе данных
++        db = get_db()
++        user = db.execute('SELECT * FROM users WHERE email = ?', (email,)).fetchone()
++
++        # Проверка пароля
++        if user and check_password_hash(user['password_hash'], password):
++            user_obj = User(user['id'], user['username'], user['email'], user['password_hash'])
++            login_user(user_obj)
++            flash('Вы успешно вошли в систему.')
++            return redirect(url_for('home'))
++        flash('Неправильный email или пароль.')
++    return render_template('login.html')
++
++
++# Выход
++@app.route('/logout')
++@login_required
++def logout():
++    logout_user()
++    flash('Вы вышли из системы.')
++    return redirect(url_for('home'))
++
++
++# Добавление товара в избранное
++@app.route('/favorite/<int:product_id>', methods=['POST'])
++@login_required
++def add_to_favorites(product_id):
++    db = get_db()
++    cursor = db.execute(
++        'SELECT * FROM favorites WHERE user_id = ? AND product_id = ?',
++        (current_user.id, product_id)
++    )
++    if cursor.fetchone():
++        return {"message": "Уже в избранном"}, 200
++
++    db.execute(
++        'INSERT INTO favorites (user_id, product_id) VALUES (?, ?)',
++        (current_user.id, product_id)
++    )
++    db.commit()
++    return {"message": "Добавлено в избранное"}, 200
++
++
++# Удаление товара из избранного
++@app.route('/favorite/<int:product_id>', methods=['DELETE'])
++@login_required
++def remove_from_favorites(product_id):
++    db = get_db()
++    db.execute(
++        'DELETE FROM favorites WHERE user_id = ? AND product_id = ?',
++        (current_user.id, product_id)
++    )
++    db.commit()
++    return {"message": "Удалено из избранного"}, 200
++
++
++# Страница с избранным
++@app.route('/favorites')
++@login_required
++def favorites():
++    db = get_db()
++    cursor = db.execute(
++        '''
++        SELECT products.*
++        FROM products
++        JOIN favorites ON products.id = favorites.product_id
++        WHERE favorites.user_id = ?
++        ''',
++        (current_user.id,)
++    )
++    favorites = cursor.fetchall()
++
++    processed_favorites = []
++    for product in favorites:
++        product_dict = dict(product)
++        if product_dict['photo']:
++            photos = [photo.strip() for photo in product_dict['photo'].split(',')]
++            high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)
++            product_dict['photo'] = high_quality_photo
++        processed_favorites.append(product_dict)
++
++    return render_template('favorites.html', favorites=processed_favorites)
++
++
++# Функция проверки высокого качества изображения
+ def is_high_quality(url):
+     import re
+     return bool(re.search(r'q=85', url) and re.search(r'w=1000', url))
+Index: templates/register.html
+===================================================================
+diff --git a/templates/register.html b/templates/register.html
+--- a/templates/register.html	
++++ b/templates/register.html	
+@@ -1,0 +1,29 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++    <meta charset="UTF-8">
++    <meta name="viewport" content="width=device-width, initial-scale=1.0">
++    <title>Регистрация</title>
++    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
++</head>
++<body>
++    <div class="container my-5">
++        <h1 class="mb-4">Регистрация</h1>
++        <form method="POST" action="/register">
++            <div class="mb-3">
++                <label for="username" class="form-label">Имя пользователя</label>
++                <input type="text" class="form-control" id="username" name="username" required>
++            </div>
++            <div class="mb-3">
++                <label for="email" class="form-label">Email</label>
++                <input type="email" class="form-control" id="email" name="email" required>
++            </div>
++            <div class="mb-3">
++                <label for="password" class="form-label">Пароль</label>
++                <input type="password" class="form-control" id="password" name="password" required>
++            </div>
++            <button type="submit" class="btn btn-primary">Зарегистрироваться</button>
++        </form>
++    </div>
++</body>
++</html>
+Index: static/style.css
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>/* General Styles */\nbody {\n    font-family: 'Roboto', Arial, sans-serif;\n    margin: 0;\n    padding: 0;\n    background-color: #f7f7f7;\n    color: #333;\n}\n\nheader {\n    background-color: #fff;\n    border-bottom: 1px solid #ddd;\n    margin-bottom: 20px;\n}\n\n/* Buttons */\n.btn-outline-dark {\n    border: 2px solid #333;\n    color: #333;\n    font-weight: bold;\n    padding: 0.6rem 1.2rem;\n    border-radius: 30px;\n    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;\n}\n\n.btn-outline-dark:hover {\n    background-color: #333;\n    color: #fff;\n    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);\n}\n\n.btn-outline-secondary {\n    border: 2px solid #aaa;\n    color: #555;\n    font-weight: normal;\n    padding: 0.4rem 1rem;\n    border-radius: 20px;\n    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;\n}\n\n.btn-outline-secondary:hover {\n    background-color: #555;\n    color: #fff;\n    border-color: #555;\n    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);\n}\n\n/* Store Link Button */\n.store-link {\n    font-size: 1.1rem;\n    text-transform: uppercase;\n    letter-spacing: 0.05rem;\n}\n\n/* Back to Catalog Button */\n.back-to-catalog {\n    font-size: 0.9rem;\n    letter-spacing: 0.03rem;\n}\n\n/* Large Buttons */\n.btn-lg {\n    font-size: 1.2rem;\n    padding: 0.75rem 2rem;\n}\n\n/* Small Buttons */\n.btn-sm {\n    font-size: 0.9rem;\n    padding: 0.4rem 1rem;\n}\n\n\n/* Product Cards */\n.product-card {\n    border: none;\n    border-radius: 10px;\n    overflow: hidden;\n    background-color: #fff;\n    transition: transform 0.3s ease, box-shadow 0.3s ease;\n}\n\n.product-card:hover {\n    transform: translateY(-5px);\n    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);\n}\n\n.product-card img {\n    object-fit: cover;\n    height: 200px;\n}\n\n.product-link {\n    text-decoration: none;\n    color: inherit;\n}\n\n.product-link:hover {\n    text-decoration: none;\n}\n\n/* Footer */\nfooter {\n    background-color: #222;\n    color: #fff;\n    text-align: center;\n    padding: 20px 0;\n}\n\nfooter a {\n    color: #fff;\n    text-decoration: none;\n}\n\nfooter a:hover {\n    text-decoration: underline;\n}\n\n/* Pagination Styles */\n.pagination .page-item .page-link {\n    color: #333;\n    border: 1px solid #ddd;\n    background-color: #f7f7f7;\n    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;\n    border-radius: 30px; /* Округлённые кнопки */\n    padding: 0.5rem 1rem;\n}\n\n.pagination .page-item .page-link:hover {\n    background-color: #333;\n    color: #fff;\n    border-color: #333;\n    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);\n}\n\n.pagination .page-item.active .page-link {\n    background-color: #333;\n    color: #fff;\n    border-color: #333;\n}\n\n.pagination .page-item.disabled .page-link {\n    color: #bbb;\n    background-color: #f7f7f7;\n    border-color: #ddd;\n}
+===================================================================
+diff --git a/static/style.css b/static/style.css
+--- a/static/style.css	
++++ b/static/style.css	
+@@ -143,4 +143,39 @@
+     color: #bbb;
+     background-color: #f7f7f7;
+     border-color: #ddd;
+-}
+\ No newline at end of file
++}
++
++.favorite-button {
++    border: 2px solid #007bff;
++    color: #007bff;
++    padding: 0.4rem 1rem;
++    border-radius: 20px;
++    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
++}
++
++.favorite-button:hover {
++    background-color: #007bff;
++    color: #fff;
++}
++
++
++/* Стили для кнопок "Избранное" */
++.favorite-button {
++    background-color: #d6d6d6; /* Светло-серый цвет фона */
++    color: #000; /* Черный цвет текста */
++    border: none; /* Убираем рамки */
++    border-radius: 25px; /* Скругленные углы */
++    padding: 8px 20px; /* Отступы для удобства */
++    font-size: 14px; /* Размер текста */
++    cursor: pointer; /* Указатель при наведении */
++    transition: all 0.3s ease; /* Анимация для плавности */
++}
++
++.favorite-button:hover {
++    background-color: #c0c0c0; /* Темнее при наведении */
++}
++
++.favorite-button:disabled {
++    background-color: #f0f0f0; /* Светлее, если отключена */
++    cursor: not-allowed; /* Запрет на клик */
++}

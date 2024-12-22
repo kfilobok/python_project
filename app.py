@@ -5,7 +5,8 @@ import bcrypt  # Для хэширования паролей
 
 # Константы
 DATABASE = 'products.db'
-PER_PAGE = 16
+PER_PAGE = 64
+VALID_TABLES = ['ZRN', 'AWN', 'LIME']
 
 # Инициализация приложения
 app = Flask(__name__)
@@ -68,18 +69,26 @@ def check_password_hash(stored_password, provided_password):
 @app.route('/')
 def home():
     db = get_db()
-    cursor = db.execute('SELECT * FROM products ORDER BY RANDOM() LIMIT 5')
-    products = cursor.fetchall()
-
     featured_products = []
-    for product in products:
-        product_dict = dict(product)
-        # Разделяем все ссылки
-        photos = [photo.strip() for photo in product_dict['photo'].split(',')]
-        # Берем первую ссылку высокого качества
-        high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)
-        product_dict['photo'] = high_quality_photo
-        featured_products.append(product_dict)
+
+    for table in VALID_TABLES:
+        cursor = db.execute(f'SELECT * FROM {table} ORDER BY RANDOM() LIMIT 5')
+        products = cursor.fetchall()
+
+        for product in products:
+            product_dict = dict(product)
+            if table == 'LIME':
+                # Для LIME сохраняем всю работу с фотографиями
+                photos = [photo.strip() for photo in product_dict['photo'].split(',')]
+                high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)
+                product_dict['photo'] = high_quality_photo
+            else:
+                # Для остальных таблиц берём первую фотографию
+                product_dict['photo'] = product_dict['photo'].split(',')[0].strip()
+
+            product_dict['table_name'] = table  # Добавляем имя таблицы
+            featured_products.append(product_dict)
+
     return render_template('home.html', featured_products=featured_products)
 
 
@@ -136,39 +145,42 @@ def logout():
     flash('Вы вышли из системы.')
     return redirect(url_for('home'))
 
-
 # Добавление товара в избранное
-@app.route('/favorite/<int:product_id>', methods=['POST'])
+@app.route('/favorite/<table_name>/<int:product_id>', methods=['POST'])
 @login_required
-def add_to_favorites(product_id):
+def add_to_favorites(table_name, product_id):
     db = get_db()
+
+    # Проверяем, если запись уже существует
     cursor = db.execute(
-        'SELECT * FROM favorites WHERE user_id = ? AND product_id = ?',
-        (current_user.id, product_id)
+        'SELECT * FROM favorites WHERE user_id = ? AND product_id = ? AND table_name = ?',
+        (current_user.id, product_id, table_name)
     )
     if cursor.fetchone():
         return {"message": "Уже в избранном"}, 200
 
+    # Добавляем запись
     db.execute(
-        'INSERT INTO favorites (user_id, product_id) VALUES (?, ?)',
-        (current_user.id, product_id)
+        'INSERT INTO favorites (user_id, product_id, table_name) VALUES (?, ?, ?)',
+        (current_user.id, product_id, table_name)
     )
     db.commit()
     return {"message": "Добавлено в избранное"}, 200
 
 
 # Удаление товара из избранного
-@app.route('/favorite/<int:product_id>', methods=['DELETE'])
+@app.route('/favorite/<table_name>/<int:product_id>', methods=['DELETE'])
 @login_required
-def remove_from_favorites(product_id):
+def remove_from_favorites(table_name, product_id):
     db = get_db()
+
+    # Удаляем запись
     db.execute(
-        'DELETE FROM favorites WHERE user_id = ? AND product_id = ?',
-        (current_user.id, product_id)
+        'DELETE FROM favorites WHERE user_id = ? AND product_id = ? AND table_name = ?',
+        (current_user.id, product_id, table_name)
     )
     db.commit()
     return {"message": "Удалено из избранного"}, 200
-
 
 # Страница с избранным
 @app.route('/favorites')
@@ -177,25 +189,195 @@ def favorites():
     db = get_db()
     cursor = db.execute(
         '''
-        SELECT products.*
-        FROM products
-        JOIN favorites ON products.id = favorites.product_id
-        WHERE favorites.user_id = ?
+        SELECT id, name, price, type, color, photo, link, 'ZRN' AS table_name 
+        FROM ZRN
+        WHERE id IN (SELECT product_id FROM favorites WHERE user_id = ? AND table_name = 'ZRN')
+        UNION ALL
+        SELECT id, name, price, type, color, photo, link, 'AWN' AS table_name 
+        FROM AWN
+        WHERE id IN (SELECT product_id FROM favorites WHERE user_id = ? AND table_name = 'AWN')
+        UNION ALL
+        SELECT id, name, price, type, color, photo, link, 'LIME' AS table_name 
+        FROM LIME
+        WHERE id IN (SELECT product_id FROM favorites WHERE user_id = ? AND table_name = 'LIME')
         ''',
-        (current_user.id,)
+        (current_user.id, current_user.id, current_user.id)
     )
     favorites = cursor.fetchall()
 
     processed_favorites = []
     for product in favorites:
         product_dict = dict(product)
-        if product_dict['photo']:
-            photos = [photo.strip() for photo in product_dict['photo'].split(',')]
-            high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)
-            product_dict['photo'] = high_quality_photo
+        table_name = product_dict['table_name']
+
+        if table_name == 'LIME':
+            # Для LIME сохраняем всю работу с фотографиями
+            if product_dict.get('photo'):
+                photos = [photo.strip() for photo in product_dict['photo'].split(',')]
+                high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)
+                product_dict['photo'] = high_quality_photo
+        else:
+            # Для остальных таблиц берём первую фотографию
+            if product_dict.get('photo'):
+                product_dict['photo'] = product_dict['photo'].split(',')[0].strip()
+
         processed_favorites.append(product_dict)
 
     return render_template('favorites.html', favorites=processed_favorites)
+
+
+@app.route('/catalog', methods=['GET', 'POST'])
+def catalog():
+    db = get_db()
+    page = request.args.get('page', 1, type=int)
+    query = request.form.get('query') if request.method == 'POST' else request.args.get('query', '')
+    sort = request.args.get('sort', 'asc')  # Значение по умолчанию: сортировка по возрастанию
+    sort_enabled = request.args.get('sort_enabled', 'true') == 'true'  # По умолчанию сортировка включена
+
+    # Лимиты и смещения для пагинации
+    offset = (page - 1) * PER_PAGE
+
+    # Основной запрос на выборку
+    base_query = '''
+        SELECT id, name, CAST(REPLACE(REPLACE(price, ' руб', ''), ',', '.') AS REAL) AS numeric_price,
+               type, color, photo, link, 'ZRN' AS table_name FROM ZRN
+        UNION ALL
+        SELECT id, name, CAST(REPLACE(REPLACE(price, ' руб', ''), ',', '.') AS REAL) AS numeric_price,
+               type, color, photo, link, 'AWN' AS table_name FROM AWN
+        UNION ALL
+        SELECT id, name, CAST(REPLACE(REPLACE(price, ' руб', ''), ',', '.') AS REAL) AS numeric_price,
+               type, color, photo, link, 'LIME' AS table_name FROM LIME
+    '''
+
+    # Условие поиска
+    if query:
+        base_query = f'''
+            SELECT * FROM (
+                {base_query}
+            ) WHERE name LIKE ? OR type LIKE ? OR color LIKE ?
+        '''
+        params = (f"%{query.strip()}%", f"%{query.strip()}%", f"%{query.strip()}%")
+    else:
+        # Без условия поиска
+        params = ()
+
+    # Добавление сортировки
+    if sort_enabled:
+        sort_order = 'ASC' if sort == 'asc' else 'DESC'
+        base_query += f' ORDER BY numeric_price {sort_order}'
+    base_query += ' LIMIT ? OFFSET ?'
+    params += (PER_PAGE, offset)
+
+    cursor = db.execute(base_query, params)
+    products = cursor.fetchall()
+
+    # Считаем общее количество товаров для пагинации
+    total_query = '''
+        SELECT COUNT(*) FROM (
+            SELECT id FROM ZRN
+            UNION ALL
+            SELECT id FROM AWN
+            UNION ALL
+            SELECT id FROM LIME
+        )
+    '''
+    if query:
+        total_query = f'''
+            SELECT COUNT(*) FROM (
+                SELECT * FROM (
+                    SELECT id, name, type, color FROM ZRN
+                    UNION ALL
+                    SELECT id, name, type, color FROM AWN
+                    UNION ALL
+                    SELECT id, name, type, color FROM LIME
+                ) WHERE name LIKE ? OR type LIKE ? OR color LIKE ?
+            )
+        '''
+        total_params = (f"%{query.strip()}%", f"%{query.strip()}%", f"%{query.strip()}%")
+    else:
+        total_params = ()
+
+    total_products = db.execute(total_query, total_params).fetchone()[0]
+    total_pages = (total_products + PER_PAGE - 1) // PER_PAGE
+
+    # Проверяем товары в избранном
+    if current_user.is_authenticated:
+        favorite_query = '''
+            SELECT product_id, table_name FROM favorites WHERE user_id = ?
+        '''
+        favorite_rows = db.execute(favorite_query, (current_user.id,)).fetchall()
+        favorite_set = {(row['product_id'], row['table_name']) for row in favorite_rows}
+    else:
+        favorite_set = set()
+
+    processed_products = []
+    for product in products:
+        product_dict = dict(product)
+        # Обработка фотографий
+        if product['table_name'] == 'LIME':
+            # Для LIME берём первое фото высокого качества или первое доступное
+            photos = [photo.strip() for photo in product_dict['photo'].split(',')]
+            high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)
+            product_dict['photo'] = high_quality_photo or (photos[0] if photos else None)
+        else:
+            # Для остальных таблиц берём первое фото
+            product_dict['photo'] = product_dict['photo'].split(',')[0].strip() if product_dict['photo'] else None
+
+        product_dict['is_favorite'] = (product['id'], product['table_name']) in favorite_set
+        processed_products.append(product_dict)
+
+    # Если товаров нет, передаём флаг products_empty
+    products_empty = len(processed_products) == 0
+
+    return render_template(
+        'catalog.html',
+        products=processed_products,
+        query=query,
+        sort=sort,
+        sort_enabled=sort_enabled,
+        page=page,
+        total_pages=total_pages,
+        products_empty=products_empty  # Флаг для отображения сообщения
+    )
+
+
+
+@app.route('/product/<table_name>/<int:product_id>')
+def product_detail(table_name, product_id):
+    db = get_db()
+
+    cursor = db.execute(f'SELECT * FROM {table_name} WHERE id = ?', (product_id,))
+    product = cursor.fetchone()
+
+    if not product:
+        return "Product not found", 404
+
+    product_dict = dict(product)
+
+    if table_name == 'LIME':
+        if product_dict['photo']:
+            photos = [photo.strip() for photo in product_dict['photo'].split(',')]
+            high_quality_photos = [photo for photo in photos if is_high_quality(photo)]
+            product_dict['photos'] = high_quality_photos
+    else:
+        if product_dict['photo']:
+            product_dict['photos'] = [photo.strip() for photo in product_dict['photo'].split(',')]
+
+    # Проверяем, добавлен ли продукт в избранное
+    product_dict['is_favorite'] = False
+    if current_user.is_authenticated:
+        favorite_check_query = '''
+            SELECT 1 FROM favorites WHERE user_id = ? AND product_id = ? AND table_name = ?
+        '''
+        is_favorite = db.execute(favorite_check_query, (current_user.id, product_id, table_name)).fetchone()
+        product_dict['is_favorite'] = is_favorite is not None
+
+    # Передача параметров в шаблон
+    return render_template(
+        'product_detail.html',
+        product=product_dict,
+        table_name=table_name  # Передача table_name
+    )
 
 
 # Функция проверки высокого качества изображения
@@ -204,83 +386,6 @@ def is_high_quality(url):
     return bool(re.search(r'q=85', url) and re.search(r'w=1000', url))
 
 
-@app.route('/catalog', methods=['GET', 'POST'])
-def catalog():
-    db = get_db()
-    page = request.args.get('page', 1, type=int)
-    query = request.form.get('query')
-
-    if query:
-        cursor = db.execute(
-            '''
-            SELECT * FROM products
-            WHERE name LIKE ?
-            LIMIT ? OFFSET ?
-            ''',
-            (f'%{query.strip()}%', PER_PAGE, (page - 1) * PER_PAGE)
-        )
-    else:
-        cursor = db.execute(
-            'SELECT * FROM products LIMIT ? OFFSET ?',
-            (PER_PAGE, (page - 1) * PER_PAGE)
-        )
-
-    products = cursor.fetchall()
-
-    # Обработка товаров
-    processed_products = []
-    for product in products:
-        product_dict = dict(product)
-        if product_dict['photo']:
-            # Разделяем все ссылки
-            photos = [photo.strip() for photo in product_dict['photo'].split(',')]
-            # Берем первую ссылку высокого качества
-            high_quality_photo = next((photo for photo in photos if is_high_quality(photo)), None)
-            product_dict['photo'] = high_quality_photo
-        processed_products.append(product_dict)
-
-    total_products = db.execute(
-        '''
-        SELECT COUNT(*) FROM products
-        WHERE name LIKE ?
-        ''' if query else 'SELECT COUNT(*) FROM products',
-        (f'%{query.strip()}%',) if query else ()
-    ).fetchone()[0]
-    total_pages = (total_products + PER_PAGE - 1) // PER_PAGE
-
-    return render_template(
-        'catalog.html',
-        products=processed_products,
-        query=query,
-        page=page,
-        total_pages=total_pages
-    )
-
-
-# Страница товара
-def is_high_quality(url):
-    import re
-    return bool(re.search(r'q=85', url) and re.search(r'w=1000', url))
-
-
-@app.route('/product/<int:product_id>')
-def product_detail(product_id):
-    db = get_db()
-    cursor = db.execute('SELECT * FROM products WHERE id = ?', (product_id,))
-    product = cursor.fetchone()
-
-    if product:
-        product_dict = dict(product)
-        if product_dict['photo']:
-            # Разделяем все ссылки
-            photos = [photo.strip() for photo in product_dict['photo'].split(',')]
-            high_quality_photos = [photo for photo in photos if is_high_quality(photo)]
-            product_dict['photos'] = high_quality_photos
-        return render_template('product_detail.html', product=product_dict)
-    else:
-        return "Product not found", 404
-
-
-# Запуск
+# Запуск приложения
 if __name__ == '__main__':
     app.run(debug=True)

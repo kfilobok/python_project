@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catalog</title>
+    <title>Каталог товаров</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -12,18 +12,48 @@
     <header class="bg-light py-3 shadow-sm">
         <div class="container d-flex justify-content-between align-items-center">
             <h1>Каталог товаров</h1>
-            <div>
-                <a href="/favorites" class="btn btn-outline-primary btn-sm">Избранное</a>
-            </div>
+            <a href="/favorites" class="btn btn-custom-outline fw-bold">Избранное</a>
+            <a href="/" class="btn btn-outline-dark btn-sm">На главную</a>
         </div>
     </header>
 
     <main class="container my-5">
-        <!-- Строка поиска -->
-        <form method="POST" action="/catalog" class="mb-4">
-            <div class="input-group">
-                <input type="text" class="form-control" name="query" placeholder="Search for products..." value="{{ query or '' }}">
-                <button class="btn btn-outline-dark" type="submit">Search</button>
+        <!-- Поиск и сортировка -->
+        <form method="GET" action="/catalog" class="d-flex justify-content-between align-items-center mb-4">
+            <!-- Поле поиска -->
+            <div class="input-group w-50">
+                <input type="text" class="form-control" name="query" placeholder="Поиск товаров..." value="{{ query or '' }}">
+                <button class="btn btn-outline-dark" type="submit">Искать</button>
+            </div>
+
+            <!-- Сортировка -->
+            <div class="d-flex gap-2">
+                <a href="/catalog?query={{ query or '' }}&sort=asc&sort_enabled=true&page={{ page }}"
+                   class="btn btn-outline-secondary {% if sort == 'asc' and sort_enabled %}active{% endif %}">
+                    Цена ↑
+                </a>
+                <a href="/catalog?query={{ query or '' }}&sort=desc&sort_enabled=true&page={{ page }}"
+                   class="btn btn-outline-secondary {% if sort == 'desc' and sort_enabled %}active{% endif %}">
+                    Цена ↓
+                </a>
+                <a href="/catalog?query={{ query or '' }}&sort={{ sort }}&sort_enabled={{ 'false' if sort_enabled else 'true' }}&page={{ page }}"
+                   style="
+                       display: inline-block;
+                       padding: 10px 20px;
+                       font-size: 14px;
+                       font-weight: bold;
+                       text-align: center;
+                       text-decoration: none;
+                       border-radius: 50px;
+                       background-color: #808080; /* Серый фон */
+                       color: #fff; /* Белый текст */
+                       border: 2px solid #808080; /* Серый бордер */
+                       transition: all 0.3s ease;"
+                   onmouseover="this.style.backgroundColor='#fff'; this.style.color='#808080'; this.style.borderColor='#808080';"
+                   onmouseout="this.style.backgroundColor='#808080'; this.style.color='#fff'; this.style.borderColor='#808080';"
+                   onmousedown="this.style.backgroundColor='#666'; this.style.color='#fff'; this.style.borderColor='#666';">
+                   {{ 'Отключить сортировку' if sort_enabled else 'Включить сортировку' }}
+                </a>
             </div>
         </form>
 
@@ -32,19 +62,39 @@
             {% for product in products %}
                 <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                     <div class="card product-card shadow-sm">
-                        <a href="/product/{{ product.id }}" class="product-link">
+                        <a href="/product/{{ product.table_name }}/{{ product.id }}" class="product-link">
                             <img src="{{ product.photo or '/static/default-image.jpg' }}" class="card-img-top" alt="{{ product.name }}">
                         </a>
                         <div class="card-body">
                             <h5 class="card-title text-truncate">{{ product.name }}</h5>
                             <p class="card-text text-muted text-truncate">{{ product.description }}</p>
-                            <a href="/product/{{ product.id }}" class="btn btn-outline-dark btn-sm">View Details</a>
-                            <button
-    class="favorite-button"
-    data-product-id="{{ product.id }}">
-    {{ 'Удалить из избранного' if product.is_favorite else 'Добавить в избранное' }}
-</button>
+                            <a href="{{ url_for('product_detail', table_name=product['table_name'], product_id=product['id'], page=page, query=query) }}"
+                               style="
+                                   display: inline-block;
+                                   padding: 12px 24px;
+                                   font-size: 14px;
+                                   font-weight: bold;
+                                   text-align: center;
+                                   text-decoration: none;
+                                   border-radius: 50px;
+                                   background-color: #000;
+                                   color: #fff;
+                                   border: 2px solid #000;
+                                   transition: all 0.3s ease;"
+                               onmouseover="this.style.backgroundColor='#fff'; this.style.color='#000'; this.style.borderColor='#000';"
+                               onmouseout="this.style.backgroundColor='#000'; this.style.color='#fff'; this.style.borderColor='#000';"
+                               onmousedown="this.style.backgroundColor='#333'; this.style.color='#fff'; this.style.borderColor='#333';">
+                                Подробнее
+                            </a>
 
+
+
+                            <button
+                            class="favorite-button btn btn-sm btn-outline-primary"
+                            data-product-id="{{ product.id }}"
+                            data-table-name="{{ product.table_name }}">
+                            {{ 'Удалить из избранного' if product.is_favorite else 'Добавить в избранное' }}
+                        </button>
                         </div>
                     </div>
                 </div>
@@ -52,9 +102,10 @@
         </div>
 
         {% if not products %}
-            <p class="text-center text-muted">No products found matching your search.</p>
+            <p class="text-center text-muted">Нет товаров, соответствующих вашему запросу.</p>
         {% endif %}
 
+        <!-- Пагинация -->
         <nav class="d-flex justify-content-center mt-4">
             <ul class="pagination">
                 {% if page > 1 %}
@@ -90,23 +141,25 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        document.querySelectorAll('.favorite-button').forEach(button => {
-            button.addEventListener('click', () => {
+                document.querySelectorAll('.favorite-button').forEach(button => {
+                button.addEventListener('click', () => {
                 const productId = button.getAttribute('data-product-id');
-                const action = button.textContent.includes('Добавить') ? 'POST' : 'DELETE'; // Определяем действие
+                const tableName = button.getAttribute('data-table-name');
+                const action = button.textContent.includes('Добавить') ? 'POST' : 'DELETE';
 
-                fetch(`/favorite/${productId}`, { method: action })
+                fetch(`/favorite/${tableName}/${productId}`, { method: action })
                     .then(response => response.json())
                     .then(data => {
                         button.textContent = data.message === 'Добавлено в избранное'
                             ? 'Удалить из избранного'
-                            : 'Добавить в избранное'; // Обновляем текст
+                            : 'Добавить в избранное';
                     })
                     .catch(error => {
                         console.error('Ошибка добавления/удаления в избранное:', error);
                     });
             });
         });
+
     </script>
 </body>
 </html>

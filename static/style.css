@@ -189,3 +189,31 @@ footer a:hover {
     cursor: not-allowed; /* Запрет на клик */
 }
 
+
+.favorite-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 10px;
+    border: 2px solid #000;
+    background-color: #fff;
+    color: #000;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.favorite-btn.added {
+    background-color: #000;
+    color: #fff;
+    border-color: #000;
+}
+
+.favorite-btn:hover {
+    background-color: #333;
+    color: #fff;
+    border-color: #333;
+}
+
