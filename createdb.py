@@ -4,38 +4,54 @@ conn = sqlite3.connect('products.db')
 cursor = conn.cursor()
 
 cursor.execute('''
-CREATE TABLE IF NOT EXISTS products (
+CREATE TABLE IF NOT EXISTS LIME (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
-    price REAL NOT NULL,
+    price INTEGER NOT NULL,
     type TEXT,
     color TEXT,
     photo TEXT,
-    link TEXT
+    link TEXT,
+     UNIQUE(link)
 )
 ''')
 
-DATABASE = 'products.db'
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS AWN (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    type TEXT,
+    color TEXT,
+    photo TEXT,
+    link TEXT,
+    UNIQUE(link)
+)
+''')
 
-create_users_table_query = '''
+cursor.execute('''
+CREATE TABLE IF NOT EXISTS ZRN (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    price INTEGER NOT NULL,
+    type TEXT,
+    color TEXT,
+    photo TEXT,
+    link TEXT,
+    UNIQUE(link)
+)
+''')
+
+cursor.execute('''
 CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL
 );
-'''
+''')
 
-with sqlite3.connect(DATABASE) as conn:
-    cursor = conn.cursor()
-    cursor.execute(create_users_table_query)
-    conn.commit()
-
-
-DATABASE = 'products.db'
-
-# SQL-запрос для создания таблицы favorites
-create_favorites_table_query = '''
+cursor.execute('''
 CREATE TABLE IF NOT EXISTS favorites (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
@@ -43,13 +59,7 @@ CREATE TABLE IF NOT EXISTS favorites (
     FOREIGN KEY (user_id) REFERENCES users (id),
     FOREIGN KEY (product_id) REFERENCES products (id)
 );
-'''
-
-# Подключение к базе данных и выполнение запроса
-with sqlite3.connect(DATABASE) as conn:
-    cursor = conn.cursor()
-    cursor.execute(create_favorites_table_query)
-    conn.commit()
+''')
 
 conn.commit()
 conn.close()
