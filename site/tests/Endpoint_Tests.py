@@ -1,5 +1,5 @@
 import unittest
-from app import app
+from site.app import app
 
 class TestRoutes(unittest.TestCase):
     def setUp(self):

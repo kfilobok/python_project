@@ -1,6 +1,6 @@
 import unittest
 import time
-from app import app
+from site.app import app
 
 class TestPagePerformance(unittest.TestCase):
     def setUp(self):

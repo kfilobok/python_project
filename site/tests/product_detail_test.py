@@ -1,5 +1,5 @@
 import unittest
-from app import app, get_db
+from site.app import app, get_db
 
 class TestProductDetail(unittest.TestCase):
     def setUp(self):

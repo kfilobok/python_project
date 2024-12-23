@@ -2,9 +2,15 @@ from flask import Flask, render_template, g, request, redirect, url_for, flash
 import sqlite3
 from flask_login import UserMixin, LoginManager, login_user, logout_user, current_user, login_required
 import bcrypt  # Для хэширования паролей
+from pathlib import Path
 
 # Константы
-DATABASE = 'products.db'
+# Получаем путь к текущему файлу app.py
+current_file = Path(__file__)
+
+# Формируем путь к базе данных, переходя на уровень выше
+db_path = current_file.parent.parent / 'products.db'
+DATABASE = db_path
 PER_PAGE = 64
 VALID_TABLES = ['ZRN', 'AWN', 'LIME']
 

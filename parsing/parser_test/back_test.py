@@ -3,7 +3,7 @@ import pytest
 
 
 def test_table_structure():
-    conn = sqlite3.connect('products.db')
+    conn = sqlite3.connect('../../products.db')
     cursor = conn.cursor()
     cursor.execute("PRAGMA table_info(products)")
     columns = cursor.fetchall()
@@ -22,7 +22,7 @@ def test_table_structure():
 
 
 def test_insert_and_query_by_name():
-    conn = sqlite3.connect('products.db')
+    conn = sqlite3.connect('../../products.db')
     cursor = conn.cursor()
     test_data = {
         "name": "Test Product",
@@ -56,7 +56,7 @@ def test_insert_and_query_by_name():
 
 
 def test_delete_old_record():
-    conn = sqlite3.connect('products.db')
+    conn = sqlite3.connect('../../products.db')
     cursor = conn.cursor()
 
     test_data = {
