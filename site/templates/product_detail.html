@@ -32,7 +32,9 @@
                 <h2>{{ product.name }}</h2>
                 <p class="text-muted">{{ product.description }}</p>
                 <p><strong>Цена:</strong> {{ product.price }}</p>
-                <p><strong>Цвет:</strong> {{ product.color }}</p>
+                {% if product.table_name != 'LIME' and product.color %}
+                <p>Цвет: {{ product.color }}</p>
+                {% endif %}
 
                 <!-- Кнопки -->
                 <div class="d-flex align-items-center gap-3">
