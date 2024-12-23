@@ -5,12 +5,8 @@ import bcrypt  # Для хэширования паролей
 from pathlib import Path
 
 # Константы
-# Получаем путь к текущему файлу app.py
 current_file = Path(__file__)
-
-# Формируем путь к базе данных, переходя на уровень выше
-db_path = current_file.parent.parent / 'products.db'
-DATABASE = db_path
+DATABASE = current_file.parent.parent / 'products.db'
 PER_PAGE = 64
 VALID_TABLES = ['ZRN', 'AWN', 'LIME']
 
